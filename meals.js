@@ -1153,5 +1153,12 @@ window.MEALS = [
 "name": "Tofu with Soy Sauce, Rice Vinegar, Sesame Oil, Chili Oil, Garlic",
 "price": "Homemade",
 "cat": "Homemade"
+},
+{
+"id": "IMG_9901",
+"src": "photos/IMG_9901.jpg",
+"name": "Spam Taco w/ Cheese",
+"price": "Homemade",
+"cat": "Homemade"
 }
 ];
