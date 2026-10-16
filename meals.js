@@ -1174,5 +1174,12 @@ window.MEALS = [
 "name": "Broccoli Beef Udon General Tso's Stir Fry",
 "price": "Homemade",
 "cat": "Homemade"
+},
+{
+"id": "IMG_9904",
+"src": "photos/IMG_9904.jpg",
+"name": "Rice and Olive Oil",
+"price": "Homemade",
+"cat": "Homemade"
 }
 ];
