@@ -11,7 +11,7 @@ window.MEALS = [
 "src": "photos/IMG_0056.jpg",
 "name": "Chorizo Sausage w/ Mexican Rice, Pico de Gallo, and Corn Salad",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_0312",
@@ -165,14 +165,14 @@ window.MEALS = [
 "src": "photos/IMG_2316.jpg",
 "name": "Baja Fish Tacos Plate",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_2327",
 "src": "photos/IMG_2327.jpg",
 "name": "Asian Pacific Rim Bowl (idfk)",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_2376",
@@ -1012,7 +1012,7 @@ window.MEALS = [
 "src": "photos/IMG_7401.jpg",
 "name": "cooked salmon & mango jalapeno poke bowl",
 "price": "$$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_7421",
@@ -1047,21 +1047,21 @@ window.MEALS = [
 "src": "photos/IMG_7828.jpg",
 "name": "Beans & rice bowl w/ Beef",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_7951",
 "src": "photos/IMG_7951.jpg",
 "name": "Fish taco",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_7963",
 "src": "photos/IMG_7963.jpg",
 "name": "rice, chicken vindaloo, tofu tikka curry",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_8103",
@@ -1075,28 +1075,28 @@ window.MEALS = [
 "src": "photos/IMG_8154.jpg",
 "name": "Roasted potatoes & tofu & enchilada",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_8241",
 "src": "photos/IMG_8241.jpg",
 "name": "pasta slop",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_8278",
 "src": "photos/IMG_8278.jpg",
 "name": "Chicken with sautéed vegetables and tofu",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_8287",
 "src": "photos/IMG_8287.jpg",
 "name": "Fried chicken with rice & beans + sausage",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_8358",
@@ -1124,7 +1124,7 @@ window.MEALS = [
 "src": "photos/IMG_9363.jpg",
 "name": "Eggs & sausage breakfast",
 "price": "$$",
-"cat": "Dining Hall"
+"cat": "College Dining Hall"
 },
 {
 "id": "IMG_9462",
