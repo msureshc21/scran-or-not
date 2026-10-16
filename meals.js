@@ -1146,5 +1146,12 @@ window.MEALS = [
 "name": "Strawberry granola waffle",
 "price": "$$",
 "cat": "Restaurant"
+},
+{
+"id": "IMG_9900",
+"src": "photos/IMG_9900.jpg",
+"name": "Tofu with Soy Sauce, Rice Vinegar, Sesame Oil, Chili Oil, Garlic",
+"price": "Homemade",
+"cat": "Homemade"
 }
 ];
