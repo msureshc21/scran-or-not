@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scran or Not</title>
+<meta name="description" content="One plate at a time: is it scran, or not?">
+<style>
+  :root { --bg:#faf7f2; --fg:#2b2622; --card:#fff; --muted:#8a8178; --line:#e8e1d7; --yes:#2e9b57; --no:#d6453d; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1c1a18; --fg:#f2ece4; --card:#2a2724; --muted:#9b9288; --line:#3a3631; --yes:#4cc27d; --no:#ff6b61; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.4 system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); }
+  h1 { font-size:20px; margin:0; }
+  .count { color:var(--muted); font-size:14px; font-variant-numeric:tabular-nums; }
+  main { max-width:520px; margin:0 auto; padding:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; transition:transform .18s, opacity .18s; }
+  .card.out-yes { transform:translateX(40px) rotate(3deg); opacity:0; }
+  .card.out-no { transform:translateX(-40px) rotate(-3deg); opacity:0; }
+  .card img { display:block; width:100%; aspect-ratio:1; object-fit:cover; background:var(--line); }
+  .card .t { padding:12px 16px 2px; font-weight:600; font-size:18px; }
+  .card .s { padding:0 16px 14px; color:var(--muted); font-size:14px; }
+  .btns { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .btns button { font:inherit; font-weight:700; font-size:18px; padding:14px; border-radius:12px; border:none; color:#fff; cursor:pointer; }
+  .btns .no { background:var(--no); }
+  .btns .yes { background:var(--yes); }
+  .btns button:active { transform:scale(.97); }
+  .hint { text-align:center; color:var(--muted); font-size:13px; margin:12px 0; }
+  .done { text-align:center; padding:80px 0; }
+  .done h2 { font-size:26px; margin:0 0 8px; }
+  .done p { color:var(--muted); margin:0; }
+</style>
+</head>
+<body>
+<header><h1>🍽️ Scran or Not?</h1><span class="count" id="count"></span></header>
+<main id="view"></main>
+<script src="meals.js"></script>
+<script>
+const SUPABASE_URL = 'https://lzfrqxsoerdzztelzirm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_igW8P7JdHMnSooySj6ZxQg_WHIK7pCt';  // publishable: safe in the browser, RLS allows insert only
+
+const MEALS = window.MEALS, byId = Object.fromEntries(MEALS.map(m => [m.id, m]));
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem('son:' + k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('son:' + k, JSON.stringify(v)); } catch {} },
+};
+
+let session = store.get('session', null);
+if (!session) { session = Math.random().toString(36).slice(2) + Date.now().toString(36); store.set('session', session); }
+const rated = new Set(store.get('rated', []));
+// each browser gets its own random order, so across many visitors every photo gets rated about equally
+let order = store.get('order', null);
+if (!order || order.some(id => !byId[id]) || order.length !== MEALS.length) {
+  order = MEALS.map(m => m.id);
+  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  store.set('order', order);
+}
+const todo = () => order.filter(id => !rated.has(id));
+
+// ---- ratings go to Supabase; failed sends are queued and retried ----
+let queue = store.get('queue', []), sending = false;
+async function flush() {
+  if (sending || !queue.length) return;
+  sending = true;
+  const batch = queue.slice();
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/ratings?on_conflict=session_id,meal', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal,resolution=ignore-duplicates' },
+      body: JSON.stringify(batch),
+    });
+    if (!r.ok) throw new Error(r.status + ' ' + await r.text());
+    queue = queue.slice(batch.length); store.set('queue', queue);
+  } catch (e) { console.warn('rating not sent yet, will retry', e); }
+  sending = false;
+}
+
+let current = null, busy = false;
+function render() {
+  const left = todo();
+  $('count').textContent = `${rated.size} rated · ${left.length} to go`;
+  current = left[0] ? byId[left[0]] : null;
+  if (!current) {
+    $('view').innerHTML = `<div class="done"><h2>You've rated every plate 🎉</h2><p>Thanks for your opinion!</p></div>`;
+    return;
+  }
+  const m = current, next = left[1] && byId[left[1]];
+  $('view').innerHTML = `<div class="card" id="card"><img src="${m.src}" alt="${esc(m.name)}">
+      <div class="t">${esc(m.name)}</div><div class="s">${esc([...new Set([m.price, m.cat])].join(' · '))}</div></div>
+    <div class="btns"><button class="no" id="no">No Scran</button><button class="yes" id="yes">Scran</button></div>
+    <div class="hint">← No Scran · Scran →</div>`;
+  $('no').onclick = () => rate(false);
+  $('yes').onclick = () => rate(true);
+  if (next) new Image().src = next.src;  // preload the next plate
+}
+function rate(scran) {
+  if (busy || !current || rated.has(current.id)) return;
+  busy = true;
+  rated.add(current.id); store.set('rated', [...rated]);
+  queue.push({ meal: current.id, scran, session_id: session }); store.set('queue', queue);
+  flush();
+  $('card').classList.add(scran ? 'out-yes' : 'out-no');
+  setTimeout(() => { busy = false; render(); }, 200);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') rate(false);
+  if (e.key === 'ArrowRight') rate(true);
+});
+flush();
+render();
+</script>
+</body>
+</html>
