@@ -1160,5 +1160,12 @@ window.MEALS = [
 "name": "Spam Taco w/ Cheese",
 "price": "Homemade",
 "cat": "Homemade"
+},
+{
+"id": "IMG_9902",
+"src": "photos/IMG_9902.jpg",
+"name": "Chicken Fried Rice",
+"price": "Homemade",
+"cat": "Homemade"
 }
 ];
