@@ -30,7 +30,8 @@
   .hint { text-align:center; color:var(--muted); font-size:13px; margin:12px 0; }
   .done { text-align:center; padding:80px 0; }
   .done h2 { font-size:26px; margin:0 0 8px; }
-  .done p { color:var(--muted); margin:0; }
+  .done p { color:var(--muted); margin:0 0 20px; }
+  .play { font:inherit; font-weight:700; font-size:17px; padding:13px 26px; border-radius:12px; border:none; background:var(--yes); color:#fff; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -52,14 +53,27 @@ const store = {
 let session = store.get('session', null);
 if (!session) { session = Math.random().toString(36).slice(2) + Date.now().toString(36); store.set('session', session); }
 const rated = new Set(store.get('rated', []));
-// each browser gets its own random order, so across many visitors every photo gets rated about equally
-let order = store.get('order', null);
-if (!order || order.some(id => !byId[id]) || order.length !== MEALS.length) {
-  order = MEALS.map(m => m.id);
-  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
-  store.set('order', order);
+const ROUND = 10;
+
+// How many ratings each photo has so far (counts only, never the Scran %). If the lookup fails, every
+// photo counts as 0 and the round is just random.
+async function fetchCounts() {
+  try {
+    const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 4000);
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/rating_counts', {
+      method: 'POST', headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' }, body: '{}', signal: ctrl.signal });
+    if (!r.ok) throw new Error(r.status);
+    return Object.fromEntries((await r.json()).map(x => [x.meal, Number(x.n)]));
+  } catch (e) { console.warn('counts unavailable, using random order', e); return {}; }
 }
-const todo = () => order.filter(id => !rated.has(id));
+// Next round: the 10 least-rated photos this browser hasn't rated. The small random jitter means people
+// arriving at the same time get different plates from the same low-count pool instead of identical rounds.
+function pickRound(counts) {
+  return MEALS.filter(m => !rated.has(m.id))
+    .map(m => ({ m, s: (counts[m.id] || 0) + Math.random() * 1.5 }))
+    .sort((a, b) => a.s - b.s).slice(0, ROUND).map(x => x.m.id);
+}
+let round = [], pos = 0;
 
 // ---- ratings go to Supabase; failed sends are queued and retried ----
 let queue = store.get('queue', []), sending = false;
@@ -90,14 +104,19 @@ setInterval(flush, 15000);  // keep retrying anything left in the queue
 
 let current = null, busy = false;
 function render() {
-  const left = todo();
-  $('count').textContent = `${rated.size} rated · ${left.length} to go`;
-  current = left[0] ? byId[left[0]] : null;
+  current = byId[round[pos]] || null;
   if (!current) {
-    $('view').innerHTML = `<div class="done"><h2>You've rated every plate 🎉</h2><p>Thanks for your opinion!</p></div>`;
+    $('count').textContent = '';
+    const left = MEALS.length - rated.size;
+    $('view').innerHTML = left > 0
+      ? `<div class="done"><h2>Thanks for your opinion!</h2><p>You've rated ${rated.size} plate${rated.size === 1 ? '' : 's'} so far.</p>
+           <button class="play" id="again">Play again: ${Math.min(ROUND, left)} new plates</button></div>`
+      : `<div class="done"><h2>You've rated every plate 🎉</h2><p>Thanks for your opinion!</p></div>`;
+    if (left > 0) $('again').onclick = start;
     return;
   }
-  const m = current, next = left[1] && byId[left[1]];
+  $('count').textContent = `${pos + 1} / ${round.length}`;
+  const m = current, next = byId[round[pos + 1]];
   $('view').innerHTML = `<div class="card" id="card"><img src="${m.src}" alt="${esc(m.name)}">
       <div class="t">${esc(m.name)}</div><div class="s">${esc([...new Set([m.price, m.cat])].join(' · '))}</div></div>
     <div class="btns"><button class="no" id="no">No Scran</button><button class="yes" id="yes">Scran</button></div>
@@ -113,14 +132,21 @@ function rate(scran) {
   queue.push({ meal: current.id, scran, session_id: session }); store.set('queue', queue);
   flush();
   $('card').classList.add(scran ? 'out-yes' : 'out-no');
-  setTimeout(() => { busy = false; render(); }, 200);
+  setTimeout(() => { busy = false; pos++; render(); }, 200);
+}
+async function start() {
+  $('count').textContent = '';
+  $('view').innerHTML = `<div class="done"><p>Plating up…</p></div>`;
+  round = pickRound(await fetchCounts()); pos = 0;
+  round.forEach(id => { new Image().src = byId[id].src; });  // preload the whole round
+  render();
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') rate(false);
   if (e.key === 'ArrowRight') rate(true);
 });
 flush();
-render();
+start();
 </script>
 </body>
 </html>
